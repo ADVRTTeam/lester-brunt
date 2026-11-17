@@ -52,6 +52,8 @@
   /* Layout */
   --lb-max: 1200px;
   --lb-max-narrow: 880px;
+  /* The single centred column the thank-you page is built on. */
+  --lb-ty-col: 720px;
   --lb-gutter: clamp(20px, 4vw, 48px);
   --lb-section-y: clamp(64px, 8vw, 112px);
 
@@ -877,8 +879,11 @@ ol {
   color: var(--lb-paper);
 }
 
+/* Vertical padding only: this class shares an element with .lb-wrap, and a
+   padding shorthand here would wipe out the wrap's side gutter. */
 .lb-final__inner {
-  padding: clamp(64px, 8vw, 104px) 0;
+  padding-top: clamp(64px, 8vw, 104px);
+  padding-bottom: clamp(64px, 8vw, 104px);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -902,8 +907,10 @@ ol {
   color: var(--lb-mist);
 }
 
+/* Vertical padding only — see .lb-final__inner above. */
 .lb-footer__inner {
-  padding: 56px 0 40px;
+  padding-top: 56px;
+  padding-bottom: 40px;
   display: flex;
   flex-direction: column;
   gap: var(--lb-s6);
@@ -1458,11 +1465,24 @@ ol {
   border-radius: var(--lb-r-card);
   box-shadow: var(--lb-shadow-raised);
   padding: clamp(28px, 4vw, 48px);
-  max-width: 720px;
+  max-width: var(--lb-ty-col);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 22px;
+}
+
+/* The confirmation page is one centred column. The regulatory block follows
+   the card's width and centring rather than running the full 1200px, so the
+   page reads as a single composition. */
+.lb-ty .lb-footer__inner {
+  align-items: center;
+}
+
+.lb-ty .lb-footer__legal {
+  width: 100%;
+  max-width: var(--lb-ty-col);
+  text-align: center;
 }
 
 /* --------------------------------------------------------------------------
