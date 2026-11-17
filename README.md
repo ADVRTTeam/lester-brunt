@@ -68,6 +68,30 @@ form works with JavaScript switched off: all five steps are revealed at once
 and the browser posts natively. The endpoint answers a plain form post with a
 303 redirect to `/thank-you/`.
 
+### Focus mode
+
+Answering question one moves the form into a native `<dialog>`:
+
+- **Desktop** — enlarged and centred at 640px, with the page behind it
+  blurred (`::backdrop` + `backdrop-filter`) and dimmed.
+- **Phone** — full screen, square corners, scrolling inside itself.
+- **Both** — background scrolling is locked, and the exact scroll position is
+  restored on close.
+
+The form element itself is moved, so answers already given come with it and
+nothing is re-rendered. The hero column is held at its measured height while
+the form is away, so the blurred page keeps its shape.
+
+`<dialog>`'s `showModal()` provides the focus trap, Esc and the top layer.
+There are three ways out — Esc, the close button, and a click on the backdrop
+— and **a dismissal is remembered**: the visitor carries on inline from
+whichever step they reached, with every answer intact, and is never pulled
+back into the dialog. Trapping someone who has asked to leave would cost more
+in goodwill than it gains in completions.
+
+Without JavaScript the dialog never opens and the form stays inline, exactly
+as it behaves today.
+
 **The conversion fires on `/thank-you/` only, and only once per submission.**
 Submitting writes a short-lived flag to `sessionStorage`; the thank-you page
 reads it, fires the conversion, and clears it. Reloading that page or landing

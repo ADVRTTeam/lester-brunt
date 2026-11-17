@@ -26,11 +26,107 @@
   var loadedAt = form.querySelector('[data-loaded-at]');
   var trackingField = form.querySelector('[data-tracking]');
 
+  var modal = document.querySelector('[data-form-modal]');
+  var modalSlot = modal && modal.querySelector('[data-modal-slot]');
+  var formHost = document.querySelector('[data-form-host]');
+
   var step = 1;
   var advanceTimer = null;
   var sending = false;
+  var inModal = false;
+  var focusDismissed = false;
+  var lockedScrollY = 0;
 
   if (loadedAt) loadedAt.value = String(Date.now());
+
+  /* ------------------------------------------------------------ focus mode */
+
+  /* Answering question one lifts the form into a dialog: enlarged and
+     centred on desktop, full screen on a phone, page blurred behind it.
+     The form node itself moves, so answers already given come with it. */
+  var canFocusMode = Boolean(modal && modalSlot && formHost && typeof modal.showModal === 'function');
+
+  function lockBackgroundScroll() {
+    lockedScrollY = window.scrollY;
+    /* Compensate for the scrollbar so the blurred page doesn't jump sideways. */
+    var gutter = window.innerWidth - document.documentElement.clientWidth;
+    var body = document.body;
+    body.style.position = 'fixed';
+    body.style.top = -lockedScrollY + 'px';
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    if (gutter > 0) body.style.paddingRight = gutter + 'px';
+  }
+
+  function unlockBackgroundScroll() {
+    var body = document.body;
+    var root = document.documentElement;
+    body.style.position = '';
+    body.style.top = '';
+    body.style.left = '';
+    body.style.right = '';
+    body.style.width = '';
+    body.style.overflow = '';
+    body.style.paddingRight = '';
+    /* The page sets scroll-behavior: smooth, which would animate this
+       restore into a visible lurch. Put it back where it was, instantly. */
+    var behaviour = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    window.scrollTo(0, lockedScrollY);
+    root.style.scrollBehavior = behaviour;
+  }
+
+  function openFocusMode() {
+    if (!canFocusMode || inModal || modal.open) return;
+    /* Someone who has dismissed focus mode once is not put back into it.
+       They carry on inline, keeping every answer they have given. */
+    if (focusDismissed) return;
+
+    /* Freeze the hero column at its current height so the page behind the
+       blur keeps its shape once the form leaves it. */
+    formHost.style.minHeight = formHost.offsetHeight + 'px';
+
+    /* Lock first: showModal() takes the scrollbar away, and the gutter has
+       to be measured while it is still there. */
+    lockBackgroundScroll();
+    modalSlot.appendChild(form);
+    form.classList.add('lb-form--modal');
+    modal.showModal();
+    inModal = true;
+
+    if (window.LB) window.LB.track('enquiry_focus_mode', { step: step });
+  }
+
+  function closeFocusMode() {
+    if (modal && modal.open) modal.close();
+  }
+
+  if (canFocusMode) {
+    /* `close` fires for Esc and the close button alike, so all the tidying
+       up lives here and nothing can leave the form stranded in the dialog. */
+    modal.addEventListener('close', function () {
+      formHost.appendChild(form);
+      form.classList.remove('lb-form--modal');
+      formHost.style.minHeight = '';
+      unlockBackgroundScroll();
+      inModal = false;
+      focusDismissed = true;
+      form.scrollTop = 0;
+      /* Stay on the step they reached, so closing costs them nothing. */
+      render(false);
+    });
+
+    var closeBtn = modal.querySelector('[data-modal-close]');
+    if (closeBtn) closeBtn.addEventListener('click', closeFocusMode);
+
+    /* A click on the dialog itself is a click on the backdrop — the form
+       sits inside the slot, so its own clicks never match. */
+    modal.addEventListener('click', function (event) {
+      if (event.target === modal) closeFocusMode();
+    });
+  }
 
   /* ------------------------------------------------------------ navigation */
   function render(focus) {
@@ -54,9 +150,15 @@
       } else if (target) {
         target.focus({ preventScroll: true });
       }
-      /* Keep the top of the form in view when the panel height changes. */
-      var rect = form.getBoundingClientRect();
-      if (rect.top < 0) form.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      /* Keep the top of the form in view when the panel height changes.
+         In focus mode the form is its own scroll container, so rewind that
+         instead of scrolling a page that is locked anyway. */
+      if (inModal) {
+        form.scrollTop = 0;
+      } else {
+        var rect = form.getBoundingClientRect();
+        if (rect.top < 0) form.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
     }
   }
 
@@ -79,6 +181,9 @@
     if (panelStep !== step || step >= TOTAL_STEPS) return;
 
     if (window.LB) window.LB.track('enquiry_step', { step: panelStep, field: input.name, value: input.value });
+
+    /* Answering question one is the moment to take over the screen. */
+    if (panelStep === 1) openFocusMode();
 
     window.clearTimeout(advanceTimer);
     advanceTimer = window.setTimeout(function () { goTo(step + 1, true); }, ADVANCE_DELAY);

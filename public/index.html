@@ -103,11 +103,16 @@
         </div>
       </div>
 
-      <div>
+      <div class="lb-form-host" data-form-host>
         <!-- ============================================================
              Enquiry form. Posts to /api/enquiry.
              Works without JavaScript: every step is revealed at once and
              the browser submits natively (see the <noscript> rules below).
+
+             Answering question one moves this whole form into the dialog
+             at the end of the document, so it fills the screen with the
+             page blurred behind it. The form node itself is moved, so any
+             answer already given survives the move.
              ============================================================ -->
         <noscript>
           <style>
@@ -120,7 +125,7 @@
         <form class="lb-form" id="enquiry-form" action="/api/enquiry" method="POST" novalidate data-enquiry-form>
           <div class="lb-form__head">
             <div style="display: flex; flex-direction: column; gap: 4px">
-              <h2 class="lb-form__title">Book your no obligation meeting</h2>
+              <h2 class="lb-form__title" id="lb-form-title">Book your no obligation meeting</h2>
               <span class="lb-form__sub">Five quick questions · No obligation</span>
             </div>
             <div class="lb-progress">
@@ -638,6 +643,20 @@
     <button class="lb-btn lb-btn--quiet" type="button" data-cookie-reject>Essential only</button>
   </div>
 </div>
+
+<!-- ======================================================================
+     Focus mode. The enquiry form is moved in here once question one is
+     answered: enlarged and centred on desktop, full screen on a phone,
+     with the page blurred behind it and background scrolling locked.
+     A native <dialog> gives us the focus trap, Esc and the top layer for
+     free. Without JavaScript it never opens and the form stays inline.
+     ====================================================================== -->
+<dialog class="lb-modal" data-form-modal aria-labelledby="lb-form-title">
+  <button class="lb-modal__close" type="button" data-modal-close aria-label="Close and go back to the page">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="lb-modal__slot" data-modal-slot></div>
+</dialog>
 
 <script src="/assets/js/analytics.js" defer></script>
 <script src="/assets/js/enquiry.js" defer></script>
