@@ -1,0 +1,14 @@
+{
+  "name": "lester-brunt-landing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lester Brunt Wealth Management — pensions and Inheritance Tax landing page, with a webhook-forwarding enquiry endpoint.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "netlify dev",
+    "check": "node --check netlify/functions/enquiry.mjs && node --check public/assets/js/enquiry.js && node --check public/assets/js/analytics.js"
+  },
+  "dependencies": {}
+}
